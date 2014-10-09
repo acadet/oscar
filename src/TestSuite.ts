@@ -12,9 +12,11 @@ class TestSuite implements Oscar.IUnitTestClassListener {
 	private _totalTests : number;
 	private _successfulTests : number;
 	private _totalRuntime : number;
+	private _blackList : Array<string>;
 
 	private _output : TestSuiteOutput;
 	private _maxRuntime : number;
+	private _buildFailure : boolean;
 
 	private _currentTestClass : Oscar.TestClass;
 	private _currentTestClassIndex : number;
@@ -37,20 +39,9 @@ class TestSuite implements Oscar.IUnitTestClassListener {
 	
 	//region Private Methods
 
-	private _shuffleArray<T>(a : Array<T>) : void {
-		for (var i = 0; i < a.length; i++) {
-			var j : number;
-			var tmp : T;
-
-			j = Math.round(Math.random() * (a.length - 1));
-			tmp = a[i];
-			a[i] = a[j];
-			a[j] = tmp;
-		}
-	}
-
 	private _moveToNextTest() : void {
 		this._currentTestMethodIndex++;
+		
 		if (this._currentTestMethodIndex < this._currentTestClass.getMethods().length) {
 			this._runSingleTest(this._currentTestClass.getMethods()[this._currentTestMethodIndex]);
 		} else {
@@ -82,18 +73,21 @@ class TestSuite implements Oscar.IUnitTestClassListener {
 			} finally {
 				if (hasFailed) {
 					this._totalTests++;
+					this._totalRuntime += test.getTime();
 					this._moveToNextTest();
 				} else {
 					this._asyncTimer = setTimeout(() => {
+						this._asyncTimer = null;
 						this.onFail(new Error('Maximum runtime exceeded'));
 					}, this._maxRuntime);
 				}
 			}
 		} else {
+
 			try {
 				test.setStart();
 				this._currentTestClass.getCore().setUp();
-				test.getCore.call(this._currentTestClass.getCore());
+				test.getCore().call(this._currentTestClass.getCore());
 				this._currentTestClass.getCore().tearDown();
 				test.setEnd();
 				test.setSuccess(true);
@@ -110,10 +104,10 @@ class TestSuite implements Oscar.IUnitTestClassListener {
 			} finally {
 				if (test.isSuccess()) {
 					this._successfulTests++;
-					this._totalRuntime += test.getTime();
 				}
 
-				this._totalTests++;				
+				this._totalTests++;
+				this._totalRuntime += test.getTime();
 				this._moveToNextTest();
 			}
 		}
@@ -136,7 +130,7 @@ class TestSuite implements Oscar.IUnitTestClassListener {
 			return;
 		}
 
-		this._shuffleArray(methods);
+		Utils.shuffleArray(methods);
 		this._currentTestMethodIndex = 0;
 		this._runSingleTest(methods[0]);
 	}
@@ -217,11 +211,13 @@ class TestSuite implements Oscar.IUnitTestClassListener {
 			outcome += 'Passed tests: <span class="success">' + this._successfulTests + '</span>. ';
 			outcome += 'Failed tests: <span class="fail">' + failedTests + '</span>.</p>';
 
+			outcome += '<p>Total: ';
 			if (this._totalRuntime < 1) {
-				outcome += '<p>Total: less than 1ms</p>';
+				outcome += 'less than 1';
 			} else {
-				outcome += '<p>Total: ' + this._totalRuntime + 'ms</p>';
+				outcome += this._totalRuntime;
 			}
+			outcome += 'ms</p>';
 
 			outcome += '<ul>';
 
@@ -236,16 +232,20 @@ class TestSuite implements Oscar.IUnitTestClassListener {
 
 					testMethod = testClass.getMethods()[j];
 
+					outcome += '<li class="test-method ';
 					if (testMethod.isSuccess()) {
+						outcome += ' success">' + testMethod.getName() + ' - ';
 						if (testMethod.getTime() < 1) {
-							outcome += '<li class="test-method success">' + testMethod.getName() + ' less than 1ms</li>';
+							outcome += 'less than 1';
 						} else {
-							outcome += '<li class="test-method success">' + testMethod.getName() + ' - ' + testMethod.getTime() + 'ms</li>';
+							outcome += testMethod.getTime();
 						}
+						outcome += 'ms';
 					} else {
-						outcome += '<li class="test-method fail">' + testMethod.getName() + ' FAILED';
-						outcome += '<p class="error">' + testMethod.getError().toString() + '</p></li>';
+						outcome += 'fail">' + testMethod.getName() + ' FAILED';
+						outcome += '<p class="error">' + testMethod.getError().toString() + '</p>';
 					}
+					outcome += '</li>';
 				}
 
 				outcome += '</ul></li>';
@@ -260,7 +260,7 @@ class TestSuite implements Oscar.IUnitTestClassListener {
 			}
 		}
 
-		if (failedTests > 0) {
+		if (failedTests > 0 && this._buildFailure) {
 			throw new Error('Test suite has failed');
 		}
 	}
@@ -316,7 +316,7 @@ class TestSuite implements Oscar.IUnitTestClassListener {
 		return this;
 	}
 
-	run(output : TestSuiteOutput, maxRuntime? : number) : void {
+	run(output : TestSuiteOutput, maxRuntime? : number, buildFailure? : boolean) : void {
 		this._output = output;
 
 		if (maxRuntime !== null && maxRuntime !== undefined) {
@@ -325,16 +325,21 @@ class TestSuite implements Oscar.IUnitTestClassListener {
 			this._maxRuntime = 30 * 1000;
 		}
 
+		if (buildFailure !== null && buildFailure !== undefined) {
+			this._buildFailure = buildFailure;
+		} else {
+			this._buildFailure = true;
+		}
+
 		if (this._collected.length < 1) {
-			// TODO
-			return;
+			throw new Error('No test collected');
 		}
 
 		this._totalTests = 0;
 		this._successfulTests = 0;
 		this._totalRuntime = 0;
 
-		this._shuffleArray(this._collected);
+		Utils.shuffleArray(this._collected);
 		this._currentTestClassIndex = -1;
 		this._handleClass();
 	}
@@ -345,7 +350,12 @@ class TestSuite implements Oscar.IUnitTestClassListener {
 		var isTearDownOk : boolean;
 		var error : Error;
 
-		clearTimeout(this._asyncTimer);
+		if (this._asyncTimer === null || this._asyncTimer === undefined) {
+			// TODO Useless, find another solution
+			return;
+		} else {
+			clearTimeout(this._asyncTimer);
+		}
 
 		try {
 			this._currentTestClass.getCore().tearDown();
@@ -370,6 +380,10 @@ class TestSuite implements Oscar.IUnitTestClassListener {
 	}
 
 	onFail(error? : Error) : void {
+		if (this._asyncTimer !== null && this._asyncTimer !== undefined) {
+			clearTimeout(this._asyncTimer);
+		}
+
 		try {
 			this._currentTestClass.getCore().tearDown();
 		} catch (e) {
@@ -379,6 +393,7 @@ class TestSuite implements Oscar.IUnitTestClassListener {
 		this._currentAsyncTest.setEnd();
 		this._currentAsyncTest.setSuccess(false);
 		this._currentAsyncTest.setError(error);
+		this._totalRuntime += this._currentAsyncTest.getTime();
 		this._totalTests++;
 
 		this._moveToNextTest();

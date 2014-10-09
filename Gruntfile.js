@@ -1,9 +1,14 @@
 module.exports = function(grunt) {
 
+	grunt.loadNpmTasks("grunt-contrib-clean");
 	grunt.loadNpmTasks("grunt-ts");
+	grunt.loadNpmTasks("grunt-contrib-uglify");
 	grunt.loadNpmTasks("grunt-contrib-watch");
 
 	grunt.initConfig({
+		clean : {
+			commands : ['tscommand**.tmp.txt']
+		},
 		ts: {
 			// A specific target
 			build: {
@@ -49,10 +54,22 @@ module.exports = function(grunt) {
 				}
 			}
 		},
+		uglify : {
+			release : {
+				options : {
+					compress : true,
+					mangle : false,
+					preserveComments : false
+				},
+				files : {
+					'out/oscar.min.js' : ['out/oscar.js']
+				}
+			}
+		},
 		watch : {
 			builder : {
 				files : ["src/*.ts", "src/**/*.ts"],
-				tasks : ["ts:build"],
+				tasks : ["ts:build", "clean:commands"],
 				options : {
 					interrupt : true,
 					atBegin : true
@@ -60,7 +77,7 @@ module.exports = function(grunt) {
 			},
 			tester : {
 				files : ["src/*.ts", "src/**/*.ts", "testing/*.ts", "testing/**/*.ts"],
-				tasks : ["ts:testing"],
+				tasks : ["ts:testing", "clean:commands"],
 				options : {
 					interrupt : true,
 					atBegin : true
@@ -70,5 +87,13 @@ module.exports = function(grunt) {
 	});
 
 	grunt.registerTask('build', ['watch:builder']);
+	grunt.registerTask(
+		'release',
+		[
+			'ts:build',
+			'uglify:release',
+			'clean:commands'
+		]
+	);
 	grunt.registerTask('testing', ['watch:tester']);
 };

@@ -4,3 +4,6 @@
 .tscache/
 node_modules/
 tscommand*.txt
+
+# Exclude from repo
+out/
