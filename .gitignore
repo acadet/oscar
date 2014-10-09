@@ -1,0 +1,6 @@
+# Tmp files/Project files
+.DS_Store
+*~
+.tscache/
+node_modules/
+tscommand*.txt
