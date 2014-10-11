@@ -1,29 +1,85 @@
 /// <reference path="ref.ts" />
 
+/**
+ * @class TestSuiteOutput
+ * @brief Authorized outputs for test suite
+ */
 enum TestSuiteOutput {
 	CONSOLE,
 	HTML
 }
 
+/**
+ * Process var from node.js
+ */
 declare var process : any;
 
+/**
+ * @class TestSuite
+ * @brief Oscar Main class. Handles all tests and sum up results
+ */
 class TestSuite implements Oscar.IOscarObserverListener {
 	//region Fields
 
+	/**
+	 * Collected test classes
+	 */
 	private _collected : Array<Oscar.TestClass>;
+
+	/**
+	 * Total run tests
+	 */
 	private _totalTests : number;
+
+	/**
+	 * Total successful tests
+	 */
 	private _successfulTests : number;
+
+	/**
+	 * Total runtime
+	 */
 	private _totalRuntime : number;
 
+	/**
+	 * Selected output for results
+	 */
 	private _output : TestSuiteOutput;
+
+	/**
+	 * Max runtime allowed (for a single test)
+	 */
 	private _maxRuntime : number;
+
+	/**
+	 * If true, test suite will exit with a failure code
+	 */
 	private _buildFailure : boolean;
 
+	/**
+	 * Current tested class
+	 */
 	private _currentTestClass : Oscar.TestClass;
+
+	/**
+	 * Index of current tested class
+	 * @type {number}
+	 */
 	private _currentTestClassIndex : number;
+
+	/**
+	 * Index of current test method
+	 */
 	private _currentTestMethodIndex : number;
 
+	/**
+	 * Current async test
+	 */
 	private _currentAsyncTest : Oscar.TestMethod;
+
+	/**
+	 * Async timer
+	 */
 	private _asyncTimer : any;
 	
 	//endregion Fields
@@ -40,19 +96,26 @@ class TestSuite implements Oscar.IOscarObserverListener {
 	
 	//region Private Methods
 
+	/**
+	 * Run next test
+	 */
 	private _moveToNextTest() : void {
 		this._currentTestMethodIndex++;
 		
 		if (this._currentTestMethodIndex < this._currentTestClass.getMethods().length) {
 			this._runSingleTest(this._currentTestClass.getMethods()[this._currentTestMethodIndex]);
 		} else {
+			// Tests have been all run for this class, move ahead
 			this._handleClass();
 		}
 	}
 
+	/**
+	 * Runs a test, either async or no
+	 * @param {Oscar.TestMethod} test [description]
+	 */
 	private _runSingleTest(test : Oscar.TestMethod) : void {
-
-		if (test.isAsync()) {
+		if (test.isAsync()) { // Async test
 			var hasFailed : boolean;
 
 			this._currentAsyncTest = test;
@@ -65,9 +128,11 @@ class TestSuite implements Oscar.IOscarObserverListener {
 				hasFailed = false;
 			} catch (e) {
 				try {
+					// Run tearDown() to avoid relics
 					this._currentTestClass.getCore().tearDown();
 				} catch (e) {
-					// NTD
+					// Do not care about failure from tearDown()
+					// For test has already failed
 				}
 
 				test.setEnd();
@@ -76,19 +141,20 @@ class TestSuite implements Oscar.IOscarObserverListener {
 				hasFailed = true;
 			} finally {
 				if (hasFailed) {
+					// Test has failed before calling callback
 					test.getObserver().stop();
 					this._totalTests++;
 					this._totalRuntime += test.getTime();
 					this._moveToNextTest();
 				} else {
+					// Test is running, create runtime timer
 					this._asyncTimer = setTimeout(() => {
 						test.getObserver().stop();
 						this.onFail(new Error('Maximum runtime exceeded'));
 					}, this._maxRuntime);
 				}
 			}
-		} else {
-
+		} else { // Sync test
 			try {
 				test.setStart();
 				this._currentTestClass.getCore().setUp();
@@ -98,9 +164,11 @@ class TestSuite implements Oscar.IOscarObserverListener {
 				test.setSuccess(true);
 			} catch (e) {
 				try {
+					// Run tearDown() to avoid relics
 					this._currentTestClass.getCore().tearDown();
 				} catch (e) {
-					// NTD
+					// Do not care about failure from tearDown()
+					// For test has already failed
 				}
 				
 				test.setEnd();
@@ -118,11 +186,16 @@ class TestSuite implements Oscar.IOscarObserverListener {
 		}
 	}
 
+	/**
+	 * Selects current class to test
+	 */
 	private _handleClass() : void {
 		var methods : Array<Oscar.TestMethod>;
 
 		this._currentTestClassIndex++;
+
 		if (this._currentTestClassIndex >= this._collected.length) {
+			// All classes have been tested
 			this._onRunOver();
 			return;
 		}
@@ -131,21 +204,26 @@ class TestSuite implements Oscar.IOscarObserverListener {
 
 		methods = this._currentTestClass.getMethods();
 		if (methods.length < 1) {
+			// No test to run, go ahead
 			this._handleClass();
 			return;
 		}
 
-		Utils.shuffleArray(methods);
+		Oscar.Utils.shuffleArray(methods);
 		this._currentTestMethodIndex = 0;
 		this._runSingleTest(methods[0]);
 	}
 
+	/**
+	 * Run when all tests are done
+	 */
 	private _onRunOver() : void {
 		var failedTests : number;
 		var sortMethod : (a : Oscar.TestMethod, b : Oscar.TestMethod) => number;
 
 		failedTests = this._totalTests - this._successfulTests;
 
+		// Sort tests by class name
 		this._collected.sort(
 			(a, b) => {
 				if (a.getName() > b.getName()) {
@@ -158,6 +236,7 @@ class TestSuite implements Oscar.IOscarObserverListener {
 			}
 		);
 
+		// Then by method name
 		sortMethod = (a, b) => {
 			if (a.getName() > b.getName()) {
 				return 1;
@@ -172,7 +251,7 @@ class TestSuite implements Oscar.IOscarObserverListener {
 			this._collected[i].getMethods().sort(sortMethod);
 		}
 
-		if (this._output === TestSuiteOutput.CONSOLE) {
+		if (this._output === TestSuiteOutput.CONSOLE) { // Console output
 			console.log('--- Unit testing sum up ---');
 
 			if (this._totalRuntime < 1) {
@@ -208,7 +287,7 @@ class TestSuite implements Oscar.IOscarObserverListener {
 					}
 				}
 			}
-		} else {
+		} else { // HTML outcome
 			var outcome : string;
 
 			outcome = '<h1>Unit testing sum up</h1>';
@@ -266,12 +345,18 @@ class TestSuite implements Oscar.IOscarObserverListener {
 		}
 
 		if (failedTests > 0 && this._buildFailure) {
+			// If Oscar is run with node.js, a build failure could be triggered
+			// Could be useful for continous integration
 			if (process !== null && process !== undefined) {
 				process.exit(1);
 			}
 		}
 	}
 
+	/**
+	 * Processes a failing async test
+	 * @param {Error} error [description]
+	 */
 	private _processFailure(error : Error) : void {
 		this._currentAsyncTest.setEnd();
 		this._currentAsyncTest.setSuccess(false);
@@ -286,11 +371,17 @@ class TestSuite implements Oscar.IOscarObserverListener {
 	
 	//region Public Methods
 
+	/**
+	 * Adds a test class to suite
+	 * @param  {UnitTestClass} test [description]
+	 * @return {TestSuite}          [description]
+	 */
 	add(test : UnitTestClass) : TestSuite {
 		var testClass : Oscar.TestClass;
 
 		testClass = new Oscar.TestClass(test);
 
+		// Collect all test methods
 		for (var name in test) {
 			var prop : any;
 			var l : number;
@@ -332,6 +423,12 @@ class TestSuite implements Oscar.IOscarObserverListener {
 		return this;
 	}
 
+	/**
+	 * Runs all tests
+	 * @param {TestSuiteOutput} output       [description]
+	 * @param {number}          maxRuntime   [description]
+	 * @param {boolean}         buildFailure [description]
+	 */
 	run(output : TestSuiteOutput, maxRuntime? : number, buildFailure? : boolean) : void {
 		this._output = output;
 
@@ -355,7 +452,7 @@ class TestSuite implements Oscar.IOscarObserverListener {
 		this._successfulTests = 0;
 		this._totalRuntime = 0;
 
-		Utils.shuffleArray(this._collected);
+		Oscar.Utils.shuffleArray(this._collected);
 		this._currentTestClassIndex = -1;
 		this._handleClass();
 	}
@@ -366,9 +463,11 @@ class TestSuite implements Oscar.IOscarObserverListener {
 		var isTearDownOk : boolean;
 		var error : Error;
 
+		// First, stop background timer
 		clearTimeout(this._asyncTimer);
 		this._asyncTimer = null;
 
+		// Try tearDown()
 		try {
 			this._currentTestClass.getCore().tearDown();
 			isTearDownOk = true;
@@ -378,6 +477,7 @@ class TestSuite implements Oscar.IOscarObserverListener {
 		}
 		
 		if (!isTearDownOk) {
+			// tearDown() failed. Test must be considered as failed
 			this._processFailure(error);
 			return;
 		}
@@ -392,13 +492,15 @@ class TestSuite implements Oscar.IOscarObserverListener {
 	}
 
 	onFail(error? : Error) : void {
+		// First, stop background timer
 		clearTimeout(this._asyncTimer);
 		this._asyncTimer = null;
 
 		try {
 			this._currentTestClass.getCore().tearDown();
 		} catch (e) {
-			//NTD
+			// Do not care about failure from tearDown()
+			// For test has already failed
 		}
 
 		this._processFailure(error);

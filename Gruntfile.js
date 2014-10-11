@@ -12,7 +12,7 @@ module.exports = function(grunt) {
 		},
 		shell : {
 			release : {
-				command: 'python tsMinifier.py src/ref.ts src out/oscar.min.ts'
+				command: 'python tsMinifier.py src ref.ts out/oscar.min.ts'
 			}
 		},
 		ts: {

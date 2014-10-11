@@ -1,27 +1,37 @@
 /// <reference path="../ref.ts" />
 
-class Utils {
-	static shuffleArray<T>(a : Array<T>) : void {
-		var n : number;
-		var f : (min : number, max : number) => number;
+module Oscar {
+	/**
+	 * @class Utils
+	 * @brief Gathers generic methods
+	 */
+	export class Utils {
 
-		f = (min, max) => {
-			return Math.round(Math.random() * max) + min;
-		};
+		/**
+		 * Shuffles provided array
+		 */
+		static shuffleArray<T>(a : Array<T>) : void {
+			var n : number;
+			var f : (min : number, max : number) => number;
 
-		n = f(a.length, a.length * a.length);
+			f = (min, max) => {
+				return Math.round(Math.random() * max) + min;
+			};
 
-		while (n >= 0) {
-			var i : number, j : number;
-			var tmp : T;
+			n = f(a.length, a.length * a.length);
 
-			i = f(0, a.length - 1);
-			j = f(0, a.length - 1);
-			tmp = a[i];
-			a[i] = a[j];
-			a[j] = tmp;
+			while (n >= 0) {
+				var i : number, j : number;
+				var tmp : T;
 
-			n--;
+				i = f(0, a.length - 1);
+				j = f(0, a.length - 1);
+				tmp = a[i];
+				a[i] = a[j];
+				a[j] = tmp;
+
+				n--;
+			}
 		}
 	}
 }

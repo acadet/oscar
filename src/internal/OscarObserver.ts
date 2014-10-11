@@ -1,10 +1,23 @@
 /// <reference path="../ref.ts" />
 
 module Oscar {
+	/**
+	 * @class OscarObserver
+	 * @brief Internal class. Async test observer
+	 */
 	export class OscarObserver implements IOscarObserver {
 		//region Fields
 
+		/**
+		 * True if test has been stopped.
+		 * When stopped, all notifications from async test
+		 * will be ignored.
+		 */
 		private _isStopped : boolean;
+
+		/**
+		 * Observer (test suite)
+		 */
 		private _listener : Oscar.IOscarObserverListener;
 		
 		//endregion Fields
@@ -40,6 +53,9 @@ module Oscar {
 			}
 		}
 
+		/**
+		 * Stops manually observer
+		 */
 		stop() : void {
 			this._isStopped = true;
 		}

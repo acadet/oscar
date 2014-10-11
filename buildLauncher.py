@@ -2,37 +2,54 @@ import os
 import re
 import sys
 
-class Engine:
+###
+ # @class BuildLauncher
+ # @brief Creates unit testing launcher including all Oscar tests
+ ###
+class BuildLauncher:
+
+	###
+	 # Collects all Oscar test classes
+	 ###
 	def __collect(self, path):
 		collected = []
+		pattern = 'class (.*) extends UnitTestClass'
+
 		for root, dirs, files in os.walk(path):
 			for fileName in files:
 				with open(os.path.join(root, fileName), 'r') as f:
 					for line in f:
-						outcome = re.findall(self.__pattern, line)
+						outcome = re.findall(pattern, line)
 						for e in outcome:
 							collected.append(e)
 							
 		return collected
 
+	###
+	 # Runs engine to collect each class then appending it to output
+	 # @param output Where launcher will be appended
+	 # @param path Folder where engine can find all tests
+	 # @param testOutput Output for oscar's outcome (console|html)
+	 # @param maxRuntime Max runtime for each test
+	 # @param buildFailure If true, build will return a failure code (useful for continous integration)
+	 ###
 	def run(self, output, path, testOutput, maxRuntime, buildFailure):
-		print('Processing...')
-
-		self.__pattern = 'class (.*) extends UnitTestClass'
+		print('\nProcessing...')
 
 		collected = self.__collect(path)
 
-		outcome = '\nnew TestSuite()'
 		print ('Collected classes:')
+		outcome = '\nnew TestSuite()'
 		for e in collected:
 			print('\t' + e)
 			outcome += '.add(new ' + e + '())'
+
 		outcome += '.run(' + str(testOutput) + ', ' + str(maxRuntime) + ', ' + buildFailure + ');\n'
 
 
 		with open(output, 'a') as outputFile:
 			outputFile.write(outcome)
-		print('Done!')
+		print('\nDone!')
 
 if __name__ == '__main__':
 	output = None
@@ -42,8 +59,9 @@ if __name__ == '__main__':
 	buildFailure = 'true'
 
 	if len(sys.argv) < 2:
+		# Wizard
 		prompt = ' > '
-		print('-- Auto test launcher wizard --')
+		print('--- Auto test launcher wizard ---')
 
 		print('\nEnter js destination file (where I am going to append launcher):')
 		output = raw_input(prompt)
@@ -81,4 +99,4 @@ if __name__ == '__main__':
 					if len(sys.argv) >= 6:
 						buildFailure = sys.argv[5]
 
-	Engine().run(output, path, testOutput, maxRuntime, buildFailure)
+	BuildLauncher().run(output, path, testOutput, maxRuntime, buildFailure)
