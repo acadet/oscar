@@ -1,7 +1,7 @@
 /// <reference path="../ref.ts" />
 
 module Oscar {
-	export interface IUnitTestClassListener {
+	export interface IOscarObserverListener {
 		onSuccess() : void;
 
 		onFail(error? : Error) : void;

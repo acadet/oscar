@@ -1,5 +1,8 @@
 /// <reference path="../src/ref.ts" />
 /// <reference path="A.ts" />
+/// <reference path="B.ts" />
+/// <reference path="C.ts" />
+/// <reference path="foo/D.ts" />
 
 class TestLauncher {
 	static run() : void {

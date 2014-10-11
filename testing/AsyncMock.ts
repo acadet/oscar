@@ -41,11 +41,13 @@ class AsyncMock {
 	}
 
 	run() : void {
-		if (this._mustFail) {
-			this._error();
-		} else {
-			this._success();
-		}
+		setTimeout(() => {
+			if (this._mustFail) {
+				this._error();
+			} else {
+				this._success();
+			}
+		}, 0);
 	}
 	
 	//endregion Public Methods

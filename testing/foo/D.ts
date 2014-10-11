@@ -1,4 +1,4 @@
-/// <reference path="../src/ref.ts" />
+/// <reference path="../../src/ref.ts" />
 
 class D extends UnitTestClass {
 	setUp() : void {
@@ -13,16 +13,16 @@ class D extends UnitTestClass {
 		Assert.isTrue(true);
 	}
 
-	alwaysFallingAsyncTest() : void {
+	alwaysFallingAsyncTest(obs : IOscarObserver) : void {
 		var mock : AsyncMock;
 
 		mock = new AsyncMock();
 		mock
 			.setSuccess(() => {
-				this.success();
+				obs.success();
 			})
 			.setError(() => {
-				this.fail();
+				obs.fail();
 			});
 
 		mock.run();

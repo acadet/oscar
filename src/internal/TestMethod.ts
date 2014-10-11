@@ -7,6 +7,7 @@ module Oscar {
 		private _name : string;
 		private _core : () => void;
 		private _isAsync : boolean;
+		private _observer : Oscar.OscarObserver;
 		private _success : boolean;
 		private _error : Error;
 		private _time : number;
@@ -41,6 +42,14 @@ module Oscar {
 
 		isAsync() : boolean {
 			return this._isAsync;
+		}
+
+		getObserver() : Oscar.OscarObserver {
+			return this._observer;
+		}
+
+		setObserver(observer : Oscar.OscarObserver) : void {
+			this._observer = observer;
 		}
 
 		isSuccess() : boolean {

@@ -14,7 +14,7 @@ class B extends UnitTestClass {
 		Assert.areEqual(3, 3);
 	}
 
-	overflowingAsyncTest() : void {
+	overflowingAsyncTest(obs : IOscarObserver) : void {
 		var mock : AsyncMock;
 
 		mock = new AsyncMock();
@@ -22,7 +22,22 @@ class B extends UnitTestClass {
 			.setSuccess(() => {
 			})
 			.setError(() => {
-				this.fail();
+				obs.fail();
+			});
+
+		mock.run();
+	}
+
+	exceedTimeoutAsyncTest(obs : IOscarObserver) : void {
+		var mock : AsyncMock;
+
+		mock = new AsyncMock();
+		mock
+			.setSuccess(() => {
+				setTimeout(() => obs.success(), 5100);
+			})
+			.setError(() => {
+				obs.fail();
 			});
 
 		mock.run();

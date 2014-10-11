@@ -5,14 +5,15 @@ enum TestSuiteOutput {
 	HTML
 }
 
-class TestSuite implements Oscar.IUnitTestClassListener {
+declare var process : any;
+
+class TestSuite implements Oscar.IOscarObserverListener {
 	//region Fields
 
 	private _collected : Array<Oscar.TestClass>;
 	private _totalTests : number;
 	private _successfulTests : number;
 	private _totalRuntime : number;
-	private _blackList : Array<string>;
 
 	private _output : TestSuiteOutput;
 	private _maxRuntime : number;
@@ -53,31 +54,35 @@ class TestSuite implements Oscar.IUnitTestClassListener {
 
 		if (test.isAsync()) {
 			var hasFailed : boolean;
+
 			this._currentAsyncTest = test;
+			test.setObserver(new Oscar.OscarObserver(this));
 
 			try {
 				test.setStart();
 				this._currentTestClass.getCore().setUp();
-				test.getCore().call(this._currentTestClass.getCore());
+				test.getCore().call(this._currentTestClass.getCore(), test.getObserver());
 				hasFailed = false;
 			} catch (e) {
 				try {
 					this._currentTestClass.getCore().tearDown();
 				} catch (e) {
-					// TODO
+					// NTD
 				}
+
 				test.setEnd();
 				test.setSuccess(false);
 				test.setError(e);
 				hasFailed = true;
 			} finally {
 				if (hasFailed) {
+					test.getObserver().stop();
 					this._totalTests++;
 					this._totalRuntime += test.getTime();
 					this._moveToNextTest();
 				} else {
 					this._asyncTimer = setTimeout(() => {
-						this._asyncTimer = null;
+						test.getObserver().stop();
 						this.onFail(new Error('Maximum runtime exceeded'));
 					}, this._maxRuntime);
 				}
@@ -95,7 +100,7 @@ class TestSuite implements Oscar.IUnitTestClassListener {
 				try {
 					this._currentTestClass.getCore().tearDown();
 				} catch (e) {
-					// TODO
+					// NTD
 				}
 				
 				test.setEnd();
@@ -199,7 +204,7 @@ class TestSuite implements Oscar.IUnitTestClassListener {
 						}
 					} else {
 						console.error('\t' + testMethod.getName() + ' FAILED');
-						console.error(testMethod.getError().toString());
+						console.error('\t\t' + testMethod.getError().toString());
 					}
 				}
 			}
@@ -261,8 +266,20 @@ class TestSuite implements Oscar.IUnitTestClassListener {
 		}
 
 		if (failedTests > 0 && this._buildFailure) {
-			throw new Error('Test suite has failed');
+			if (process !== null && process !== undefined) {
+				process.exit(1);
+			}
 		}
+	}
+
+	private _processFailure(error : Error) : void {
+		this._currentAsyncTest.setEnd();
+		this._currentAsyncTest.setSuccess(false);
+		this._currentAsyncTest.setError(error);
+		this._totalRuntime += this._currentAsyncTest.getTime();
+		this._totalTests++;
+
+		this._moveToNextTest();
 	}
 	
 	//endregion Private Methods
@@ -273,7 +290,6 @@ class TestSuite implements Oscar.IUnitTestClassListener {
 		var testClass : Oscar.TestClass;
 
 		testClass = new Oscar.TestClass(test);
-		test.setListener(this);
 
 		for (var name in test) {
 			var prop : any;
@@ -350,12 +366,8 @@ class TestSuite implements Oscar.IUnitTestClassListener {
 		var isTearDownOk : boolean;
 		var error : Error;
 
-		if (this._asyncTimer === null || this._asyncTimer === undefined) {
-			// TODO Useless, find another solution
-			return;
-		} else {
-			clearTimeout(this._asyncTimer);
-		}
+		clearTimeout(this._asyncTimer);
+		this._asyncTimer = null;
 
 		try {
 			this._currentTestClass.getCore().tearDown();
@@ -366,7 +378,7 @@ class TestSuite implements Oscar.IUnitTestClassListener {
 		}
 		
 		if (!isTearDownOk) {
-			this.onFail(error);
+			this._processFailure(error);
 			return;
 		}
 
@@ -380,23 +392,16 @@ class TestSuite implements Oscar.IUnitTestClassListener {
 	}
 
 	onFail(error? : Error) : void {
-		if (this._asyncTimer !== null && this._asyncTimer !== undefined) {
-			clearTimeout(this._asyncTimer);
-		}
+		clearTimeout(this._asyncTimer);
+		this._asyncTimer = null;
 
 		try {
 			this._currentTestClass.getCore().tearDown();
 		} catch (e) {
-			// TODO
+			//NTD
 		}
 
-		this._currentAsyncTest.setEnd();
-		this._currentAsyncTest.setSuccess(false);
-		this._currentAsyncTest.setError(error);
-		this._totalRuntime += this._currentAsyncTest.getTime();
-		this._totalTests++;
-
-		this._moveToNextTest();
+		this._processFailure(error);
 	}
 
 	//endregion Oscar.IUnitTestClassListener

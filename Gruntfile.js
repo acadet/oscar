@@ -1,6 +1,7 @@
 module.exports = function(grunt) {
 
 	grunt.loadNpmTasks("grunt-contrib-clean");
+	grunt.loadNpmTasks("grunt-shell");
 	grunt.loadNpmTasks("grunt-ts");
 	grunt.loadNpmTasks("grunt-contrib-uglify");
 	grunt.loadNpmTasks("grunt-contrib-watch");
@@ -8,6 +9,11 @@ module.exports = function(grunt) {
 	grunt.initConfig({
 		clean : {
 			commands : ['tscommand**.tmp.txt']
+		},
+		shell : {
+			release : {
+				command: 'python tsMinifier.py src/ref.ts src out/oscar.min.ts'
+			}
 		},
 		ts: {
 			// A specific target
@@ -91,8 +97,9 @@ module.exports = function(grunt) {
 		'release',
 		[
 			'ts:build',
+			'clean:commands',
 			'uglify:release',
-			'clean:commands'
+			'shell:release'
 		]
 	);
 	grunt.registerTask('testing', ['watch:tester']);

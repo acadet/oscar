@@ -27,17 +27,17 @@ class A extends UnitTestClass {
 		Assert.areEqual(2, a[1]);
 	}
 
-	anAsyncTest() : void {
+	anAsyncTest(obs : IOscarObserver) : void {
 		var mock : AsyncMock;
 
 		mock = new AsyncMock();
 
 		mock
 			.setSuccess(() => {
-				setTimeout(() => this.success(), 2000);
+				setTimeout(() => obs.success(), 2000);
 			})
 			.setError(() => {
-				this.fail();
+				obs.fail();
 			});
 
 		mock.run();

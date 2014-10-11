@@ -6,14 +6,13 @@ class Engine:
 	def __collect(self, path):
 		collected = []
 		for root, dirs, files in os.walk(path):
-			for d in dirs:
-				collected + self.__collect(root + d)
 			for fileName in files:
-				with open(root + fileName, 'r') as f:
+				with open(os.path.join(root, fileName), 'r') as f:
 					for line in f:
 						outcome = re.findall(self.__pattern, line)
 						for e in outcome:
 							collected.append(e)
+							
 		return collected
 
 	def run(self, output, path, testOutput, maxRuntime, buildFailure):
@@ -21,8 +20,6 @@ class Engine:
 
 		self.__pattern = 'class (.*) extends UnitTestClass'
 
-		if path[len(path) - 1] != '/':
-			path += '/'
 		collected = self.__collect(path)
 
 		outcome = '\nnew TestSuite()'
@@ -38,14 +35,43 @@ class Engine:
 		print('Done!')
 
 if __name__ == '__main__':
-	if len(sys.argv) < 2:
-		raise Error('Missing output')
-	else:
-		path = '.'
-		testOutput = 0
-		maxRuntime = 30 * 1000
-		buildFailure = 'true'
+	output = None
+	path = '.'
+	testOutput = 0
+	maxRuntime = 30 * 1000
+	buildFailure = 'true'
 
+	if len(sys.argv) < 2:
+		prompt = ' > '
+		print('-- Auto test launcher wizard --')
+
+		print('\nEnter js destination file (where I am going to append launcher):')
+		output = raw_input(prompt)
+
+		print('\nPath where I can find all your test classes: (default \'.\')')
+		data = raw_input(prompt)
+		if data != '':
+			path = data
+
+		print('\nWhich format for output? (0 = Console - default, 1 = HTML)')
+		data = raw_input(prompt)
+		if data == '0' or data == '1':
+			testOutput = data
+		
+		print('\nMaximum runtime in ms? (default 30*1000ms)')
+		data = raw_input(prompt)
+		if data.isdigit():
+			maxRuntime = data
+
+		print('\nMust Oscar exit with failure if at least one test has failed? (y - default/n)')
+		data = raw_input(prompt)
+		if data == 'y' or data == 'n':
+			if data == 'y':
+				buildFailure = 'true'
+			else:
+				buildFailure = 'false'
+	else:
+		output = sys.argv[1]
 		if len(sys.argv) >= 3:
 			path = sys.argv[2]
 			if len(sys.argv) >= 4:
@@ -55,4 +81,4 @@ if __name__ == '__main__':
 					if len(sys.argv) >= 6:
 						buildFailure = sys.argv[5]
 
-		Engine().run(sys.argv[1], path, testOutput, maxRuntime, buildFailure)
+	Engine().run(output, path, testOutput, maxRuntime, buildFailure)
