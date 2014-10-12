@@ -429,8 +429,13 @@ class TestSuite implements Oscar.IOscarObserverListener {
 	 * @param {number}          maxRuntime   [description]
 	 * @param {boolean}         buildFailure [description]
 	 */
-	run(output : TestSuiteOutput, maxRuntime? : number, buildFailure? : boolean) : void {
-		this._output = output;
+	run(output? : TestSuiteOutput, maxRuntime? : number, buildFailure? : boolean) : void {
+		if (output !== null && output !== undefined) {
+			this._output = output;
+		} else {
+			this._output = TestSuiteOutput.CONSOLE;
+		}
+		
 
 		if (maxRuntime !== null && maxRuntime !== undefined) {
 			this._maxRuntime = maxRuntime;

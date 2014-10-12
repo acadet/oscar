@@ -1,18 +1,28 @@
 module.exports = function(grunt) {
+	var pkg = require('./package.json');
 
 	grunt.loadNpmTasks("grunt-contrib-clean");
+	grunt.loadNpmTasks("grunt-rename");
 	grunt.loadNpmTasks("grunt-shell");
 	grunt.loadNpmTasks("grunt-ts");
 	grunt.loadNpmTasks("grunt-contrib-uglify");
 	grunt.loadNpmTasks("grunt-contrib-watch");
+	grunt.loadNpmTasks("grunt-zip");
 
 	grunt.initConfig({
 		clean : {
-			commands : ['tscommand**.tmp.txt']
+			commands : ['tscommand**.tmp.txt'],
+			release : ['oscar.' + pkg.version + '.min.ts', 'oscar.' + pkg.version + '.min.js']
+		},
+		rename : {
+			release : {
+				src : 'out/oscar.min.js',
+				dest : 'oscar.' + pkg.version + '.min.js'
+			}
 		},
 		shell : {
 			release : {
-				command: 'python tsMinifier.py src ref.ts out/oscar.min.ts'
+				command: 'python tsMinifier.py src ref.ts oscar.' + pkg.version + '.min.ts'
 			}
 		},
 		ts: {
@@ -68,7 +78,7 @@ module.exports = function(grunt) {
 					preserveComments : false
 				},
 				files : {
-					'out/oscar.min.js' : ['out/oscar.js']
+					'out/oscar.min.js' : 'out/oscar.js'
 				}
 			}
 		},
@@ -89,6 +99,17 @@ module.exports = function(grunt) {
 					atBegin : true
 				}
 			}
+		},
+		zip : {
+			release : {
+				src : [
+					'oscar.' + pkg.version + '.min.ts',
+					'oscar.' + pkg.version + '.min.js',
+					'buildLauncher.py'
+				],
+				dest : 'oscar.' + pkg.version + '.zip',
+				compression : 'DEFLATE'
+			}
 		}
 	});
 
@@ -99,7 +120,10 @@ module.exports = function(grunt) {
 			'ts:build',
 			'clean:commands',
 			'uglify:release',
-			'shell:release'
+			'rename:release',
+			'shell:release',
+			'zip:release',
+			'clean:release'
 		]
 	);
 	grunt.registerTask('testing', ['watch:tester']);
