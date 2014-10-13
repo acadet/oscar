@@ -1,0 +1,14 @@
+language: node_js
+node_js:
+    - "0.11"
+before_install:
+    - "npm install -g grunt-cli"
+install:
+    - "npm install grunt-ts"
+script:
+    - "grunt ts:build --verbose --force"
+    - "grunt ts:testing --verbose --force"
+    - "grunt uglify:release --verbose --force"
+    - "node out/oscar.min.js"
+    - "python tsMinifier.py src ref.ts oscar.min.ts"
+    - "tsc oscar.min.ts"
