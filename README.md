@@ -1,4 +1,6 @@
-# Oscar - A TypeScript test harness
+# Oscar - A TypeScript test harness [![Build Status](https://travis-ci.org/acadet/oscar.svg?branch=master)](https://travis-ci.org/acadet/oscar)
+
+> Beauty is a form of Genius--is higher, indeed, than Genius, as it needs no explanation.
 
 ### Main features:
 

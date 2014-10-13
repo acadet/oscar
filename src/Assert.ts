@@ -43,9 +43,9 @@ class Assert {
 
 	/**
 	 * Asserts provided value is null
-	 * @param {any} value [description]
+	 * @param {T} value [description]
 	 */
-	static isNull(value : any) : void {
+	static isNull<T>(value : T) : void {
 		if (value !== null && value !== undefined) {
 			throw new Error('Expected value to be null');
 		}
@@ -53,9 +53,9 @@ class Assert {
 
 	/**
 	 * Asserts provided value is not null
-	 * @param {any} value [description]
+	 * @param {T} value [description]
 	 */
-	static isNotNull(value : any) : void {
+	static isNotNull<T>(value : T) : void {
 		if (value === null || value === undefined) {
 			throw new Error('Expected value to be not null');
 		}
@@ -70,6 +70,9 @@ class Assert {
 		}
 	}
 
+	/**
+	 * Asserts provided values are not equal
+	 */
 	static areNotEqual<T>(unexpected : T, value : T) : void {
 		if (value === unexpected) {
 			throw new Error('Unexpected ' + unexpected + ' instead of ' + value);

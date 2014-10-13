@@ -13,5 +13,5 @@ interface IOscarObserver {
 	/**
 	 * Notifies asynchronous test has failed
 	 */
-	fail() : void;
+	fail(error? : Error) : void;
 }

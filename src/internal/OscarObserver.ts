@@ -46,10 +46,10 @@ module Oscar {
 			}
 		}
 
-		fail() : void {
+		fail(error? : Error) : void {
 			if (!this._isStopped) {
 				this._isStopped = true;
-				this._listener.onFail();
+				this._listener.onFail(error);
 			}
 		}
 

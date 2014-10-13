@@ -52,7 +52,7 @@ class BuildLauncher:
 		print('\nDone!')
 
 if __name__ == '__main__':
-	output = None
+	output = 'output.js'
 	path = '.'
 	testOutput = 0
 	maxRuntime = 30 * 1000
