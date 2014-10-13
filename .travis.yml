@@ -5,6 +5,8 @@ before_install:
     - "npm install -g grunt-cli"
 install:
     - "npm install grunt-ts"
+    - "npm install grunt-contrib-uglify"
+    - "npm install typescript"
 script:
     - "grunt ts:build --verbose --force"
     - "grunt ts:testing --verbose --force"
