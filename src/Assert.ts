@@ -78,6 +78,26 @@ class Assert {
 			throw new Error('Unexpected ' + unexpected + ' instead of ' + value);
 		}
 	}
+
+	/**
+	 * Asserts provided function to throw an error
+	 * @param {() => void} func [description]
+	 */
+	static throws(func : () => void) : void {
+		var hasFailed : boolean;
+
+		hasFailed = false;
+
+		try {
+			func();
+		} catch (e) {
+			hasFailed = true;
+		} finally {
+			if (!hasFailed) {
+				throw new Error('Expected function to throw an error');
+			}
+		}
+	}
 	
 	//endregion Public Methods
 	
