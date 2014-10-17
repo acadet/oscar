@@ -33,17 +33,17 @@ class TSMinifier:
 		with open(output, 'w') as outputFile:
 			for e in collected:
 				with open(folder + e) as file:
-					for line in file:
-						# Remove comments
-						minifiedLine = re.sub('(//(.*)\n)|(/\*\*(.*)\*/)', '', line)
-						# Remove whitespaces
-						minifiedLine = re.sub('\n', ' ', minifiedLine)
-						minifiedLine = re.sub('\t', '', minifiedLine)
-						minifiedLine = re.sub('\s{2,}', ' ', minifiedLine)
-						# Remove leading whitespaces
-						minifiedLine = minifiedLine.lstrip()
+					content = file.read()
+					# Remove comments
+					minifiedContent = re.sub('\/\/(.*)\n', '', content)
+					minifiedContent = re.sub('\/\*\*(.+?)\*\/', '', minifiedContent, 0, re.DOTALL)
+					# Remove whitespaces
+					minifiedContent = re.sub('\n', ' ', minifiedContent)
+					minifiedContent = re.sub('\t', '', minifiedContent)
+					minifiedContent = re.sub('\s{2,}', ' ', minifiedContent)
+					minifiedContent = minifiedContent.strip()
 
-						outputFile.write(minifiedLine)
+					outputFile.write(minifiedContent)
 
 		print('\nDone!')
 

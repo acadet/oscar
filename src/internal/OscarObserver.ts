@@ -41,15 +41,31 @@ module Oscar {
 
 		success() : void {
 			if (!this._isStopped) {
-				this._isStopped = true;
-				this._listener.onSuccess();
+				// Simulates an async behavior
+				setTimeout(
+					() => {
+						if (!this._isStopped) {
+							this._isStopped = true;
+							this._listener.onSuccess();
+						}
+					},
+					0
+				);
 			}
 		}
 
 		fail(error? : Error) : void {
 			if (!this._isStopped) {
-				this._isStopped = true;
-				this._listener.onFail(error);
+				// Simulates an async behavior
+				setTimeout(
+					() => {
+						if (!this._isStopped) {
+							this._isStopped = true;
+							this._listener.onFail(error);
+						}
+					},
+					0
+				);
 			}
 		}
 
