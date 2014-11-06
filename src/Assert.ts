@@ -80,7 +80,7 @@ class Assert {
 	}
 
 	/**
-	 * Asserts provided function to throw an error
+	 * Asserts provided function throws an error
 	 * @param {() => void} func [description]
 	 */
 	static throws(func : () => void) : void {

@@ -328,6 +328,11 @@ class TestSuite implements Oscar.IOscarObserverListener {
 					} else {
 						outcome += 'fail">' + testMethod.getName() + ' FAILED';
 						outcome += '<p class="error">' + testMethod.getError().toString() + '</p>';
+						console.log(
+							'%c' + testMethod.getName() + ' failed with error ' + testMethod.getError().message,
+							'color: red'
+						);
+						console.log('%c' + (<any>testMethod.getError()).stack, 'color : red');
 					}
 					outcome += '</li>';
 				}
